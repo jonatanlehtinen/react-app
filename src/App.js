@@ -15,20 +15,38 @@ function Sighting(props) {
 }
 
 class DuckSightingsList extends Component {
-  render() {
-    const sightings = [];
-    this.props.sightings.forEach((sighting) => {
-       sightings.push(
-         <Sighting
-         time="10.1.2018" 
-         species = "duck"
-         description = "weird"
-         count = "100" />
-       );
+  constructor(props) {
+    super(props)
+    this.state = {
+      sightings: this.props.sightings
+    }
+    this.callApi();
+  }
+
+  callApi(){
+    fetch('http://localhost:8081/sightings')
+    .then((result) => {
+      return result.json();
+    }).then((json) => {
+      const sightingsList = [];
+      json.forEach((sighting) => {
+        sightingsList.push(
+          <Sighting
+          time = {sighting.dateTime} 
+          species = {sighting.species}
+          description = {sighting.description}
+          count = {sighting.count} 
+          />
+        );
+      });
+      this.setState({sightings: sightingsList})
     });
+  }
+
+  render() {
     return (
       <ul>
-        {sightings}
+        {this.state.sightings}
       </ul>
     );
   }
@@ -36,6 +54,7 @@ class DuckSightingsList extends Component {
 
 class DuckSightingsSortButton extends Component {
   render() {
+    console.log("asdf");
     return (
       <h3>Here's the sort button</h3>
     );
@@ -56,7 +75,7 @@ class DuckSightings extends Component {
       <div>
       <DuckSightingsHeader />
       <DuckSightingsSortButton />
-      <DuckSightingsList sightings={["2", "sd"]}/>
+      <DuckSightingsList sightings = {[]}/>
       </div>
     );
   }
@@ -77,7 +96,6 @@ class MainHeader extends Component {
     );
   }
 }
-
 
 class DuckSightingsTable extends Component {
   render() {
