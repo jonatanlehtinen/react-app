@@ -1,5 +1,11 @@
+import 'bootstrap/dist/css/bootstrap.css'
 import React, { Component } from 'react';
-import {PageHeader} from 'react-bootstrap';
+import { PageHeader, 
+         Form,
+         FormGroup,
+         ControlLabel,
+         FormControl,
+         Button } from 'react-bootstrap';
 import './App.css';
 
 
@@ -18,12 +24,11 @@ class DuckSightingsList extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      sightings: this.props.sightings
+      sightings: []
     }
-    this.callApi();
   }
 
-  callApi(){
+  componentDidMount() {
     fetch('http://localhost:8081/sightings')
     .then((result) => {
       return result.json();
@@ -45,16 +50,13 @@ class DuckSightingsList extends Component {
 
   render() {
     return (
-      <ul>
-        {this.state.sightings}
-      </ul>
+      <ul>{this.state.sightings}</ul>
     );
   }
 }
 
 class DuckSightingsSortButton extends Component {
   render() {
-    console.log("asdf");
     return (
       <h3>Here's the sort button</h3>
     );
@@ -75,16 +77,77 @@ class DuckSightings extends Component {
       <div>
       <DuckSightingsHeader />
       <DuckSightingsSortButton />
-      <DuckSightingsList sightings = {[]}/>
+      <DuckSightingsList />
       </div>
     );
   }
 }
 
 class ReportSightingForm extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      acceptedSpecies: [],
+      speciesValue: ''
+    }
+    this.handleChange = this.handleChange.bind(this);
+}
+
+  componentDidMount() {
+    fetch('http://localhost:8081/species')
+    .then((result) => {
+      return result.json();
+    }).then((result) => {
+      const species = [];
+      result.forEach((element) => {
+        species.push(element.name);
+      });
+      this.setState({acceptedSpecies: species})
+    });
+  }
+
+  getSpeciesValidationState() {
+    const currentValue = this.state.speciesValue
+    const acceptedSpecies = this.state.acceptedSpecies
+    if (acceptedSpecies.includes(currentValue)) return 'success';
+    else return 'error'
+  }
+
+  handleChange(event) {
+    this.setState({ speciesValue: event.target.value });
+  }
+
   render() {
     return (
-      <h1>The form will go here</h1>   
+      <div>
+        <h1>Report new sighting</h1>
+        <Form inline>
+          <FormGroup controlId="reportFormTime">
+            <ControlLabel>Datetime</ControlLabel> {' '}
+            <FormControl type="datetime-local" />
+          </FormGroup>{' '}
+          <FormGroup 
+            controlId="reportFormSpecies"
+            validationState={this.getSpeciesValidationState()}
+          >
+            <ControlLabel>Species</ControlLabel>{' '}
+            <FormControl 
+              type="textarea" 
+              value={this.state.speciesValue}
+              onChange={this.handleChange}
+          />
+          </FormGroup>{' '}
+          <FormGroup controlId="reportFormCount">
+            <ControlLabel>Count</ControlLabel>{' '}
+            <FormControl type="number" />
+          </FormGroup>{' '}
+          <FormGroup controlId="reportFormDescription">
+            <ControlLabel>Textarea</ControlLabel>{' '}
+            <FormControl type="textarea" />
+          </FormGroup>{' '}
+          <Button type="submit">Report sighting</Button>
+        </Form>
+      </div>
     );
   }
 }
