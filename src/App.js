@@ -28,6 +28,7 @@ class DuckSightingsList extends Component {
     }
   }
 
+  /**
   componentDidMount() {
     fetch('http://localhost:8081/sightings')
     .then((result) => {
@@ -47,18 +48,46 @@ class DuckSightingsList extends Component {
       this.setState({sightings: sightingsList})
     });
   }
+ */
 
   render() {
     return (
-      <ul>{this.state.sightings}</ul>
+      <ul>{this.props.sightings}</ul>
     );
   }
 }
 
 class DuckSightingsSortButton extends Component {
+  constructor(props) {
+    super(props)
+    const sortDescendingText = "Sort by time in descending order";
+    const sortAscendingText = "Sort by time in ascending order";
+    this.state = {
+      currentSortState: sortAscendingText,
+      sortDescendingText: sortDescendingText,
+      sortAscendingText: sortAscendingText
+    }
+    this.handleClick = this.handleClick.bind(this);
+  }
+
+  handleClick(event) {
+    const currentState = this.state.currentSortState;
+    const sortDescendingText = this.state.sortDescendingText;
+    const sortAscendingText = this.state.sortAscendingText;
+    if (currentState === sortDescendingText) {
+      this.setState({currentSortState: sortAscendingText});
+      this.props.sortDescending();
+    }
+    else if (currentState === sortAscendingText) {
+      this.setState({currentSortState: sortDescendingText});
+      this.props.sortAscending();
+    }
+  }
+
   render() {
     return (
-      <h3>Here's the sort button</h3>
+      <Button onClick={this.handleClick}
+              bsStyle="primary">{this.state.currentSortState}</Button>
     );
   }
 }
@@ -66,18 +95,80 @@ class DuckSightingsSortButton extends Component {
 class DuckSightingsHeader extends Component {
   render() {
     return (
-      <h2>Header for the sightings</h2>
+      <h2>Sightings</h2>
     );
   }
 }
 
 class DuckSightings extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sightings: []
+    }
+    this.sortDescending = this.sortDescending.bind(this);
+    this.sortAscending = this.sortAscending.bind(this);
+  }
+
+  componentDidMount() {
+    fetch('http://localhost:8081/sightings')
+    .then((result) => {
+      return result.json();
+    }).then((json) => {
+      const sightingsList = [];
+      json.forEach((sighting) => {
+        sightingsList.push(
+          <Sighting
+          time = {sighting.dateTime} 
+          species = {sighting.species}
+          description = {sighting.description}
+          count = {sighting.count}
+          key = {sighting.id}
+          />
+        );
+      });
+      this.setState({sightings: sightingsList})
+      this.sortDescending();
+    });
+  }
+
+  sortDescending() {
+    const toBeSortedSightings = [].concat(this.state.sightings);
+    const len = toBeSortedSightings.length;
+    for (var i = 1; i < len; i++) {
+      const tmp = toBeSortedSightings[i];
+      const tmpTime = tmp.props.time
+      for (var j = i - 1; j >= 0 && (toBeSortedSightings[j].props.time < tmpTime); j--) {
+        toBeSortedSightings[j + 1] = toBeSortedSightings[j];
+      }
+      toBeSortedSightings[j + 1] = tmp;
+    }
+    this.setState({sightings: toBeSortedSightings});
+  }
+
+  sortAscending() {
+    const toBeSortedSightings = [].concat(this.state.sightings);
+    const len = toBeSortedSightings.length;
+    for (var i = 1; i < len; i++) {
+      const tmp = toBeSortedSightings[i];
+      const tmpTime = tmp.props.time
+      for (var j = i - 1; j >= 0 && (toBeSortedSightings[j].props.time > tmpTime); j--) {
+        toBeSortedSightings[j + 1] = toBeSortedSightings[j];
+      }
+      toBeSortedSightings[j + 1] = tmp;
+    }
+    this.setState({sightings: toBeSortedSightings});
+  }
+
   render() {
     return (
       <div>
       <DuckSightingsHeader />
-      <DuckSightingsSortButton />
-      <DuckSightingsList />
+      <DuckSightingsSortButton 
+        sortDescending = {this.sortDescending}
+        sortAscending = {this.sortAscending}
+      />
+      <DuckSightingsList sightings={this.state.sightings}/>
       </div>
     );
   }
@@ -87,10 +178,14 @@ class ReportSightingForm extends Component {
   constructor(props) {
     super(props)
     this.state = {
+      dateTimeValue: '',
       acceptedSpecies: [],
-      speciesValue: ''
+      speciesValue: '',
+      descriptionValue: '',
+      countValue: ''
     }
     this.handleChange = this.handleChange.bind(this);
+    this.validateForm = this.validateForm.bind(this);
 }
 
   componentDidMount() {
@@ -107,24 +202,54 @@ class ReportSightingForm extends Component {
   }
 
   getSpeciesValidationState() {
-    const currentValue = this.state.speciesValue
+    const currentValue = this.state.speciesValue.toLowerCase();
     const acceptedSpecies = this.state.acceptedSpecies
+    if (currentValue.length === 0) return null;
     if (acceptedSpecies.includes(currentValue)) return 'success';
     else return 'error'
   }
 
   handleChange(event) {
-    this.setState({ speciesValue: event.target.value });
+    this.setState({ [event.target.name]: event.target.value });
+  }
+
+  validateForm(event) {
+    if (this.getSpeciesValidationState() === "success"){
+      fetch('http://localhost:8081/sightings', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          "dateTime": this.state.dateTimeValue + "Z",
+          "species": this.state.speciesValue.toLowerCase(),
+          "description": this.state.descriptionValue,
+          "count": this.state.countValue
+        })
+      });
+    }
+    else {
+      event.preventDefault();
+      alert("The species is not valid. Currently accepted species: " + 
+            this.state.acceptedSpecies);
+    }
   }
 
   render() {
     return (
       <div>
         <h1>Report new sighting</h1>
-        <Form inline>
+        <Form onSubmit={this.validateForm} inline>
           <FormGroup controlId="reportFormTime">
-            <ControlLabel>Datetime</ControlLabel> {' '}
-            <FormControl type="datetime-local" />
+            <ControlLabel>Date and  time</ControlLabel> {' '}
+            <FormControl 
+              name="dateTimeValue"
+              type="datetime-local" 
+              required="true"
+              value={this.state.dateTimeValue}
+              onChange={this.handleChange}
+            />
           </FormGroup>{' '}
           <FormGroup 
             controlId="reportFormSpecies"
@@ -132,18 +257,33 @@ class ReportSightingForm extends Component {
           >
             <ControlLabel>Species</ControlLabel>{' '}
             <FormControl 
+              name="speciesValue"
               type="textarea" 
+              required="true"
               value={this.state.speciesValue}
               onChange={this.handleChange}
           />
           </FormGroup>{' '}
+          <FormGroup controlId="reportFormDescription">
+            <ControlLabel>Description</ControlLabel>{' '}
+            <FormControl 
+              name="descriptionValue"
+              type="textarea"
+              required="true"
+              value={this.state.descriptionValue}
+              onChange={this.handleChange}
+            />
+          </FormGroup>{' '}
           <FormGroup controlId="reportFormCount">
             <ControlLabel>Count</ControlLabel>{' '}
-            <FormControl type="number" />
-          </FormGroup>{' '}
-          <FormGroup controlId="reportFormDescription">
-            <ControlLabel>Textarea</ControlLabel>{' '}
-            <FormControl type="textarea" />
+            <FormControl 
+              name="countValue"
+              type="number"
+              min="1"
+              required="true"
+              value={this.state.countValue}
+              onChange={this.handleChange}
+            />
           </FormGroup>{' '}
           <Button type="submit">Report sighting</Button>
         </Form>
@@ -155,7 +295,7 @@ class ReportSightingForm extends Component {
 class MainHeader extends Component {
   render() {
     return (
-       <PageHeader>This is the main header</PageHeader>
+       <PageHeader>Duck Sightings</PageHeader>
     );
   }
 }
