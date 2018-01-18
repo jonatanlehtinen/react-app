@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
-import { PageHeader, 
-         Form,
+import { Form,
          FormGroup,
          ControlLabel,
          FormControl,
          Button} from 'react-bootstrap';
+import { config } from './config.js'
 
 /**
  * Form for reporting sightings. The user is required to input everything
@@ -27,7 +27,7 @@ class ReportSightingForm extends Component {
 
   //Fetch the accepted species from the API
   componentDidMount() {
-    fetch('http://localhost:8081/species')
+    fetch(config.apiUrl + config.apiSpeciesPath)
     .then((result) => {
       return result.json();
     }).then((result) => {
@@ -56,7 +56,7 @@ class ReportSightingForm extends Component {
   validateForm(event) {
     if (this.getSpeciesValidationState() === "success"){
 
-      fetch('http://localhost:8081/sightings', {
+      fetch(config.apiUrl + config.apiSightingsPath, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
