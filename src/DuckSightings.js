@@ -3,6 +3,7 @@ import DuckSightingsList from './DuckSightingsList.js';
 import DuckSightingsSortButton from './DuckSightingsSortButton.js';
 import DuckSightingsHeader from './DuckSightingsHeader.js';
 import Sighting from './Sighting.js';
+import { config } from './config';
 
 
 /**
@@ -21,7 +22,7 @@ class DuckSightings extends Component {
 
   //Make GET request to fetch the sightings from the API
   componentDidMount() {
-    fetch('http://localhost:8081/sightings')
+    fetch(config.apiUrl + config.apiSightingsPath)
     .then((result) => {
       return result.json();
     }).then((json) => {
