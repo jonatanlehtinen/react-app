@@ -12,14 +12,16 @@ In case the input is valid, it will be posted to the API.
 
 ### Running the application
 
-You first have to clone and start the API:
+You first have to clone and initialize the API:
 
-    git clone https://github.com/Vincit/summer-2018
+    git clone https://github.com/joppeel/summer-2018
     cd summer-2018
+    npm install
     npm start
 
 Then you can clone this application and run it:
 
     git clone https://github.com/joppeel/react-app
     cd react-app
+    npm install
     npm start
